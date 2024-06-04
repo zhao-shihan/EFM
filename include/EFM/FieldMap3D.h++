@@ -1,6 +1,7 @@
 #pragma once
 
 #include "EFM/detail/has_subscript.h++"
+#include "EFM/detail/is_std_complex.h++"
 #include "EFM/detail/mucify.h++"
 #include "TFile.h"
 #include "TNtuple.h"
@@ -32,12 +33,20 @@ namespace EFM {
 /// @tparam Coord grid value type (floating-point, default: double)
 /// @tparam Allocator the allocator type used by internal field point data
 /// member (default: std::allocator<T>).
-template<typename T, typename Coord = double,
-         typename Allocator = std::allocator<T>,
-         std::enable_if_t<detail::is_general_arithmetic_v<T>, bool> = true,
-         std::enable_if_t<std::is_arithmetic_v<T> or detail::has_subscript_v<T>,
-                          bool> = true,
-         std::enable_if_t<std::is_floating_point_v<Coord>, bool> = true>
+template<
+    typename T, typename Coord = double, typename Allocator = std::allocator<T>,
+    std::enable_if_t<detail::is_general_arithmetic_v<T>, bool> = true,
+    std::enable_if_t<
+        std::is_arithmetic_v<T> or             // real scalar field
+            detail::is_std_complex_v<T> or     // complex scalar field
+            std::is_arithmetic_v<std::decay_t< // real vector field
+                decltype(std::declval<std::conditional_t<
+                             detail::has_subscript_v<T>, T&, char*>>()[0])>> or
+            detail::is_std_complex_v<std::decay_t< // complex vector field
+                decltype(std::declval<std::conditional_t<
+                             detail::has_subscript_v<T>, T&, char*>>()[0])>>,
+        bool> = true,
+    std::enable_if_t<std::is_floating_point_v<Coord>, bool> = true>
 class FieldMap3D {
 public:
     FieldMap3D(std::string_view fileName, std::string_view nTupleName,
@@ -62,9 +71,10 @@ public:
         Initialize(nTuple, tolerance);
     }
 
-    FieldMap3D(TNtuple* nTuple, // TNtuple stores float
-               Coord tolerance = 10 * std::numeric_limits<float>::epsilon(),
-               const Allocator& allocator = {}) :
+    explicit FieldMap3D(TNtuple* nTuple, // TNtuple stores float
+                        Coord tolerance = 10 *
+                                          std::numeric_limits<float>::epsilon(),
+                        const Allocator& allocator = {}) :
         fGrid{},
         fField{allocator} {
         Initialize(nTuple, tolerance);
@@ -121,8 +131,22 @@ private:
         }
         const auto fieldDimension{nColumn - 3};
         if (std::is_arithmetic_v<T> and fieldDimension > 1) {
-            throw std::runtime_error{"EFM::FieldMap3D: Data represents vector "
-                                     "field but this is scalar field"};
+            throw std::runtime_error{
+                "EFM::FieldMap3D: Data looks like vector or complex "
+                "field but this is a real scalar field"};
+        }
+        if (detail::is_std_complex_v<T> and fieldDimension != 2) {
+            throw std::runtime_error{
+                "EFM::FieldMap3D: this is a complex scalar field but data does "
+                "not look like one"};
+        }
+        if (detail::is_std_complex_v<std::decay_t<
+                decltype(std::declval<std::conditional_t<
+                             detail::has_subscript_v<T>, T&, char*>>()[0])>> and
+            fieldDimension % 2 != 0) {
+            throw std::runtime_error{
+                "EFM::FieldMap3D: this is a complex vector field but data does "
+                "not look like one"};
         }
 
         std::map<std::array<Coord, 3>, T> gridData;
@@ -140,11 +164,27 @@ private:
                 throw std::runtime_error{err.str()};
             }
             auto& field{it->second};
-            if constexpr (std::is_arithmetic_v<T>) { // scalar field
+            if constexpr (std::is_arithmetic_v<T>) {
+                // real scalar field
                 field = data[3];
-            } else { // vector field
+            } else if constexpr (detail::is_std_complex_v<T>) {
+                // complex scalar field
+                field = {data[3], data[4]};
+            } else if constexpr (std::is_arithmetic_v<std::decay_t<
+                                     decltype(std::declval<std::conditional_t<
+                                                  detail::has_subscript_v<T>,
+                                                  T&, char*>>()[0])>>) {
+                // real vector field
                 for (int i{}; i < fieldDimension; ++i) {
                     field[i] = data[i + 3];
+                }
+            } else if constexpr (detail::is_std_complex_v<std::decay_t<
+                                     decltype(std::declval<std::conditional_t<
+                                                  detail::has_subscript_v<T>,
+                                                  T&, char*>>()[0])>>) {
+                // complex vector field
+                for (int i{}; i < fieldDimension / 2; ++i) {
+                    field[i] = {data[2 * i], data[2 * i + 1]};
                 }
             }
         }
