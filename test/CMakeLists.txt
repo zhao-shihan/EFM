@@ -1,3 +1,5 @@
+project(EFM)
+
 if(EFM_ENABLE_UBSAN_IN_DEBUG_BUILD)
     if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
         add_compile_options($<$<CONFIG:Debug>:-fsanitize=undefined>
@@ -37,6 +39,8 @@ macro(add_executable_with_feature prefix feature)
     target_compile_definitions(${prefix}_${feature} PRIVATE EFM_STATIC_TEST)
     target_compile_options(${prefix}_${feature} PRIVATE ${EFM_COMPILE_OPTIONS})
 endmacro(add_executable_with_feature)
+
+configure_file(generate_data.py ${PROJECT_BINARY_DIR} COPYONLY)
 
 add_executable_with_feature(FieldMap3D cxx_std_17)
 
