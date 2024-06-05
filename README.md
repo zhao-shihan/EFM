@@ -33,10 +33,10 @@ auto main() -> int {
     EFM::FieldMap3D<float, float> phi{"field.root", "phi"};
     //              x   y   z (float)     |
     //               \  |  /        ROOT file name
-    std::cout << phi << '\n' // -> print all interpolation data
     std::cout << phi(2, 3, 3) << '\n';
     //            |
     //            +--> returns field value (float)
+    std::cout << phi << '\n'; // -> prints all interpolation data
 }
 ```
 
