@@ -16,7 +16,7 @@
 
 ## Introduction
 
-Effective field map (EFM) is a header-only library for 2D/3D real/complex scalar/vector field interpolation. Field data can be read from `TNtuple` object in ROOT file.
+Effective field map (EFM) is a header-only library for 2D/3D real/complex scalar/vector field interpolation. Field data can be read from `TNtuple` object in a ROOT file.
 
 ## Quick start
 
@@ -26,9 +26,10 @@ Scalar field:
 //      field value type            TNtuple name in the file
 //               |  coordinate value type       |
 //               |       | (default to double)  |
-EFM::FieldMap3D<float, float> phi{"phi.root", "phi"};
+EFM::FieldMap3D<float, float> phi{"field.root", "phi"};
 //              x   y   z (float)     |
 //               \  |  /        ROOT file name
+std::cout << phi << '\n' // -> print all interpolation data
 std::cout << phi(2, 3, 3) << '\n';
 //            |
 //            +--> returns field value (float)
@@ -55,19 +56,25 @@ Commomly used real scalar fields or vector fields are good, for example:
 
 A 3D scalar field:
 ```c++
-// read field data from "phi.root", data are stored in TNtuple "phi"
+// read field data from "field.root", data are stored in TNtuple "phi"
 // TNtuple columns looks like "x:y:z:phi". Points on regular rectangular grid.
-EFM::FieldMap3D<double> phi{"phi.root", "phi"};
+EFM::FieldMap3D<double> phi{"field.root", "phi"};
 // field value at [2, 3, 3]
 std::cout << phi(2, 3, 3) << '\n';
 ```
 
-A 3D vector field:
+A 3D vector field using Eigen::Vector3d:
 ```c++
 // read field data from "velocity.root", data are stored in TNtuple "velocity"
 // TNtuple columns looks like "x:y:z:u:v:w". Points on regular rectangular grid.
 EFM::FieldMap3D<Eigen::Vector3d> velocity{"velocity.root", "velocity"};
 // field value at [-1, 6, -4]
+std::cout << velocity(-1, 6, -4) << '\n';
+```
+
+Other vector type is good too, as long as it performs like an algebraic type. For example,
+```c++
+EFM::FieldMap3D<CLHEP::Hep3Vector> velocity{"field.root", "magField"};
 std::cout << velocity(-1, 6, -4) << '\n';
 ```
 
@@ -78,20 +85,20 @@ Complex fields are also available:
 A 2D complex scalar field:
 ```c++
 // TNtuple columns looks like "x:y:z:a:b". Points on regular rectangular grid.
-EFM::FieldMap3D<std::complex<float>, float> phi{"Phi.root", "Phi"};
+EFM::FieldMap3D<std::complex<float>, float> phi{"field.root", "phi"};
 std::cout << phi(2, 3, 3) << '\n';
 ```
 
 A 3D complex vector field:
 ```c++
-// TNtuple columns looks like "x:y:z:u1:u2:v1:v2:u3:v3". Points on regular rectangular grid.
+// TNtuple columns looks like "x:y:z:re1:im1:re2:im2:re3:im3". Points on regular rectangular grid.
 EFM::FieldMap3D<Eigen::Vector3cd> phi{"field.root", "f"};
 std::cout << phi(2, 3, 3) << '\n';
 ```
 
 ### Other field type
 
-Other types of strange fields are also OK, as long as the field value type is an arithmetic type, or it can be subscripted to an arithmetic type, and the field value type is default constructable and assignable element-by-element. For example, you can interpolate an electric field and a magnetic field as one:
+Other types of strange fields are also OK, as long as the field value type is an arithmetic type, or it can be subscripted to an arithmetic type, and the field value type is default constructable and assignable element-by-element. For example, you can interpolate an electric field and a magnetic field as whole:
 
 ```c++
 // TNtuple columns looks like "x:y:z:Bx:By:Bz:Ex:Ey:Ez".
