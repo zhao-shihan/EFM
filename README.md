@@ -23,29 +23,40 @@ Effective field map (EFM) is a header-only library for 2D/3D real/complex scalar
 Scalar field:
 
 ```c++
-//      field value type            TNtuple name in the file
-//               |  coordinate value type       |
-//               |       | (default to double)  |
-EFM::FieldMap3D<float, float> phi{"field.root", "phi"};
-//              x   y   z (float)     |
-//               \  |  /        ROOT file name
-std::cout << phi << '\n' // -> print all interpolation data
-std::cout << phi(2, 3, 3) << '\n';
-//            |
-//            +--> returns field value (float)
+#include "EFM/FieldMap3D.h++"
+#include <iostream>
+
+auto main() -> int {
+    //      field value type            TNtuple name in the file
+    //               |  coordinate value type       |
+    //               |       | (default to double)  |
+    EFM::FieldMap3D<float, float> phi{"field.root", "phi"};
+    //              x   y   z (float)     |
+    //               \  |  /        ROOT file name
+    std::cout << phi << '\n' // -> print all interpolation data
+    std::cout << phi(2, 3, 3) << '\n';
+    //            |
+    //            +--> returns field value (float)
+}
 ```
 
 Complex vector field:
 
 ```c++
-//      field value type                 TNtuple name in the file
-//               |                                   |
-EFM::FieldMap3D<Eigen::Vector3cd> phi{"field.root", "a"};
-//              x    y    z (double)       |
-//               \   |   /           ROOT file name
-std::cout << phi(-2, 6, -5) << '\n';
-//            |
-//            +--> returns field value (Eigen::Vector3cd)
+#include "EFM/FieldMap3D.h++"
+#include "Eigen/Core"
+#include <iostream>
+
+auto main() -> int {
+    //      field value type                 TNtuple name in the file
+    //               |                                   |
+    EFM::FieldMap3D<Eigen::Vector3cd> phi{"field.root", "a"};
+    //              x    y    z (double)       |
+    //               \   |   /           ROOT file name
+    std::cout << phi(-2, 6, -5) << '\n';
+    //            |
+    //            +--> returns field value (Eigen::Vector3cd)
+}
 ```
 
 ## Basic API
