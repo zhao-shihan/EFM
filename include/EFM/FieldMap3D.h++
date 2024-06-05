@@ -2,6 +2,7 @@
 
 #include "EFM/FieldType.h++"
 #include "EFM/detail/mucify.h++"
+
 #include "TFile.h"
 #include "TNtuple.h"
 
@@ -42,8 +43,7 @@ template<typename T, typename Coord = double,
 class FieldMap3D {
 public:
     FieldMap3D(std::string_view fileName, std::string_view nTupleName,
-               Coord tolerance = 0.001,
-               const Allocator& allocator = {}) :
+               Coord tolerance = 0.001, const Allocator& allocator = {}) :
         fFieldDimension{},
         fGrid{},
         fField{allocator} {
