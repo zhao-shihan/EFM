@@ -1,5 +1,10 @@
 #pragma once
 
+#include "EFM/detail/check_root.h++"
+
+#ifndef EFM_FieldMap3D_d257e2ce3a0979995ab8973a34ffab9a11b34d4356af2a193de7791a6a6121b7
+#define EFM_FieldMap3D_d257e2ce3a0979995ab8973a34ffab9a11b34d4356af2a193de7791a6a6121b7
+
 #include "EFM/FieldType.h++"
 #include "EFM/detail/mucify.h++"
 
@@ -294,3 +299,5 @@ private:
 };
 
 } // namespace EFM
+
+#endif
