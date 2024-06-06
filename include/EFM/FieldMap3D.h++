@@ -86,14 +86,14 @@ public:
         const auto j{static_cast<int>(v)};
         const auto k{static_cast<int>(w)};
         // clang-format off
-        return detail::trilerp(fField[Idx(i,     j,     k    )],
-                               fField[Idx(i,     j,     k + 1)],
-                               fField[Idx(i,     j + 1, k    )],
-                               fField[Idx(i,     j + 1, k + 1)],
-                               fField[Idx(i + 1, j,     k    )],
-                               fField[Idx(i + 1, j,     k + 1)],
-                               fField[Idx(i + 1, j + 1, k    )],
-                               fField[Idx(i + 1, j + 1, k + 1)],
+        return detail::trilerp(Field(i,     j,     k    ),
+                               Field(i,     j,     k + 1),
+                               Field(i,     j + 1, k    ),
+                               Field(i,     j + 1, k + 1),
+                               Field(i + 1, j,     k    ),
+                               Field(i + 1, j,     k + 1),
+                               Field(i + 1, j + 1, k    ),
+                               Field(i + 1, j + 1, k + 1),
                                u - i, v - j, w - k); // clang-format on
     }
 
@@ -272,16 +272,11 @@ private:
         }
     }
 
-    /// @brief Get nomalized index for fField.
-    /// @param i original x index.
-    /// @param j original y index.
-    /// @param k original z index.
-    /// @return nomalized index.
-    auto Idx(int i, int j, int k) const -> int {
+    auto Field(int i, int j, int k) const -> const T& {
         assert(i < get<0>(fGrid).n);
         assert(j < get<1>(fGrid).n);
         assert(k < get<2>(fGrid).n);
-        return (i * get<1>(fGrid).n + j) * get<2>(fGrid).n + k;
+        return fField[(i * get<1>(fGrid).n + j) * get<2>(fGrid).n + k];
     }
 
 private:
