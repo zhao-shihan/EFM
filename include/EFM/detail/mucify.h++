@@ -18,7 +18,7 @@ struct has_binary_arithmetic_with<
         decltype(std::declval<const T&>() + std::declval<const T&>()),
         decltype(std::declval<const T&>() - std::declval<const T&>()),
         // k * T
-        decltype(+std::declval<const T&>()),
+        /* decltype(+std::declval<const T&>()), */
         decltype(-std::declval<const T&>()),
         /* decltype(1 * std::declval<const T&>()),
         decltype(std::declval<const T&>() * 1),
@@ -27,7 +27,7 @@ struct has_binary_arithmetic_with<
         decltype(std::declval<const U&>() + std::declval<const U&>()),
         decltype(std::declval<const U&>() - std::declval<const U&>()),
         // k * U
-        decltype(+std::declval<const U&>()),
+        /* decltype(+std::declval<const U&>()), */
         decltype(-std::declval<const U&>()),
         /* decltype(1 * std::declval<const U&>()),
         decltype(std::declval<const U&>() * 1),
