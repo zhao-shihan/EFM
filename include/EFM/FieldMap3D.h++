@@ -17,7 +17,6 @@
 #include <iomanip>
 #include <limits>
 #include <map>
-#include <memory_resource>
 #include <numeric>
 #include <ostream>
 #include <sstream>
