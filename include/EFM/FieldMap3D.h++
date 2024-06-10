@@ -52,6 +52,10 @@ template<typename T, typename Proj = detail::multidentity,
          std::enable_if_t<std::is_floating_point_v<Coord>, bool> = true>
 class FieldMap3D : private Proj {
 public:
+    using FieldType = T;
+    using CoordinateType = Coord;
+
+public:
     FieldMap3D(std::string_view fileName, std::string_view nTupleName,
                Proj proj = {}, Coord tolerance = 0.001,
                const Allocator& allocator = {}) :
@@ -86,6 +90,10 @@ public:
         Initialize(nTuple, tolerance);
     }
 
+    auto Projection(Proj proj) -> void {
+        static_cast<Proj&>(*this) = std::move(proj);
+    }
+
     auto operator()(Coord x, Coord y, Coord z) const -> T {
         std::tie(x, y, z) = static_cast<const Proj&>(*this)(x, y, z);
 
@@ -110,10 +118,6 @@ public:
                                Field(i + 1, j + 1, k    ),
                                Field(i + 1, j + 1, k + 1),
                                u - i, v - j, w - k); // clang-format on
-    }
-
-    auto Projection(Proj proj) -> void {
-        static_cast<Proj&>(*this) = std::move(proj);
     }
 
     auto operator()(std::array<Coord, 3> x) const -> T {
