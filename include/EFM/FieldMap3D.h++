@@ -321,7 +321,7 @@ private:
 struct SymmetryX {
     [[nodiscard]] constexpr auto
     operator()(double x, double y,
-               double z) const noexcept -> std::array<double, 3> {
+               double z) const noexcept -> std::tuple<double, double, double> {
         return {std::abs(x), y, z};
     }
 };
@@ -340,7 +340,7 @@ using FieldMap3DSymX = FieldMap3D<T, SymmetryX, Coord, Allocator>;
 struct SymmetryY {
     [[nodiscard]] constexpr auto
     operator()(double x, double y,
-               double z) const noexcept -> std::array<double, 3> {
+               double z) const noexcept -> std::tuple<double, double, double> {
         return {x, std::abs(y), z};
     }
 };
@@ -359,7 +359,7 @@ using FieldMap3DSymY = FieldMap3D<T, SymmetryY, Coord, Allocator>;
 struct SymmetryZ {
     [[nodiscard]] constexpr auto
     operator()(double x, double y,
-               double z) const noexcept -> std::array<double, 3> {
+               double z) const noexcept -> std::tuple<double, double, double> {
         return {x, y, std::abs(z)};
     }
 };
@@ -378,7 +378,7 @@ using FieldMap3DSymZ = FieldMap3D<T, SymmetryZ, Coord, Allocator>;
 struct SymmetryXY {
     [[nodiscard]] constexpr auto
     operator()(double x, double y,
-               double z) const noexcept -> std::array<double, 3> {
+               double z) const noexcept -> std::tuple<double, double, double> {
         return {std::abs(x), std::abs(y), z};
     }
 };
@@ -397,7 +397,7 @@ using FieldMap3DSymXY = FieldMap3D<T, SymmetryXY, Coord, Allocator>;
 struct SymmetryXZ {
     [[nodiscard]] constexpr auto
     operator()(double x, double y,
-               double z) const noexcept -> std::array<double, 3> {
+               double z) const noexcept -> std::tuple<double, double, double> {
         return {std::abs(x), y, std::abs(z)};
     }
 };
@@ -416,7 +416,7 @@ using FieldMap3DSymXZ = FieldMap3D<T, SymmetryXZ, Coord, Allocator>;
 struct SymmetryYZ {
     [[nodiscard]] constexpr auto
     operator()(double x, double y,
-               double z) const noexcept -> std::array<double, 3> {
+               double z) const noexcept -> std::tuple<double, double, double> {
         return {x, std::abs(y), std::abs(z)};
     }
 };
@@ -435,7 +435,7 @@ using FieldMap3DSymYZ = FieldMap3D<T, SymmetryYZ, Coord, Allocator>;
 struct SymmetryXYZ {
     [[nodiscard]] constexpr auto
     operator()(double x, double y,
-               double z) const noexcept -> std::array<double, 3> {
+               double z) const noexcept -> std::tuple<double, double, double> {
         return {std::abs(x), std::abs(y), std::abs(z)};
     }
 };
