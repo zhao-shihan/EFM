@@ -12,8 +12,11 @@
 #include "TNtuple.h"
 
 #include <algorithm>
+#include <array>
 #include <cassert>
+#include <cmath>
 #include <complex>
+#include <functional>
 #include <iomanip>
 #include <limits>
 #include <map>
@@ -23,6 +26,7 @@
 #include <stdexcept>
 #include <string>
 #include <string_view>
+#include <tuple>
 #include <type_traits>
 #include <utility>
 #include <vector>
@@ -34,20 +38,24 @@
 namespace EFM {
 
 /// @brief Interpolate field on a 3-dimensional regular grid. Trilinear
-/// interpolation is performed.
-/// @tparam T field value type.
+/// interpolation is performed. The coordinates is projected by `Proj`, this can
+/// be used to move the field or do symmetry operation.
+/// @tparam Proj projection to apply to the coordinates (default: identity)
+/// @tparam T field value type
 /// @tparam Coord grid value type (floating-point, default: double)
 /// @tparam Allocator the allocator type used by internal field point data
 /// member (default: std::allocator<T>).
-template<typename T, typename Coord = double,
-         typename Allocator = std::allocator<T>,
+template<typename T, typename Proj = detail::multidentity,
+         typename Coord = double, typename Allocator = std::allocator<T>,
          std::enable_if_t<detail::is_general_arithmetic_v<T>, bool> = true,
          std::enable_if_t<FieldTypeQualified<T>::value, bool> = true,
          std::enable_if_t<std::is_floating_point_v<Coord>, bool> = true>
-class FieldMap3D {
+class FieldMap3D : private Proj {
 public:
     FieldMap3D(std::string_view fileName, std::string_view nTupleName,
-               Coord tolerance = 0.001, const Allocator& allocator = {}) :
+               Proj proj = {}, Coord tolerance = 0.001,
+               const Allocator& allocator = {}) :
+        Proj{std::move(proj)},
         fFieldDimension{},
         fGrid{},
         fField{allocator} {
@@ -68,9 +76,10 @@ public:
         Initialize(nTuple, tolerance);
     }
 
-    explicit FieldMap3D(TNtuple* nTuple, // TNtuple stores float
+    explicit FieldMap3D(TNtuple* nTuple, Proj proj = {},
                         Coord tolerance = 0.001,
                         const Allocator& allocator = {}) :
+        Proj{std::move(proj)},
         fFieldDimension{},
         fGrid{},
         fField{allocator} {
@@ -78,6 +87,8 @@ public:
     }
 
     auto operator()(Coord x, Coord y, Coord z) const -> T {
+        std::tie(x, y, z) = static_cast<const Proj&>(*this)(x, y, z);
+
         x = std::clamp(x, get<0>(fGrid).min, get<0>(fGrid).max);
         y = std::clamp(y, get<1>(fGrid).min, get<1>(fGrid).max);
         z = std::clamp(z, get<2>(fGrid).min, get<2>(fGrid).max);
@@ -99,6 +110,10 @@ public:
                                Field(i + 1, j + 1, k    ),
                                Field(i + 1, j + 1, k + 1),
                                u - i, v - j, w - k); // clang-format on
+    }
+
+    auto Projection(Proj proj) -> void {
+        static_cast<Proj&>(*this) = std::move(proj);
     }
 
     auto operator()(std::array<Coord, 3> x) const -> T {
@@ -296,6 +311,139 @@ private:
     std::array<GridInfomation, 3> fGrid;
     std::vector<T, Allocator> fField;
 };
+
+/// @brief Mirror symmetry operation along x-axis. Flip the x-coordinate from
+/// negative to positive.
+struct SymmetryX {
+    [[nodiscard]] constexpr auto
+    operator()(double x, double y,
+               double z) const noexcept -> std::array<double, 3> {
+        return {std::abs(x), y, z};
+    }
+};
+
+/// @brief A YZ plane mirror symmetric field.
+/// @tparam T field value type
+/// @tparam Coord grid value type (floating-point, default: double)
+/// @tparam Allocator the allocator type used by internal field point data
+/// member (default: std::allocator<T>).
+template<typename T, typename Coord = double,
+         typename Allocator = std::allocator<T>>
+using FieldMap3DSymX = FieldMap3D<T, SymmetryX, Coord, Allocator>;
+
+/// @brief Mirror symmetry operation along y-axis. Flip the y-coordinate from
+/// negative to positive.
+struct SymmetryY {
+    [[nodiscard]] constexpr auto
+    operator()(double x, double y,
+               double z) const noexcept -> std::array<double, 3> {
+        return {x, std::abs(y), z};
+    }
+};
+
+/// @brief A ZX plane mirror symmetric field.
+/// @tparam T field value type
+/// @tparam Coord grid value type (floating-point, default: double)
+/// @tparam Allocator the allocator type used by internal field point data
+/// member (default: std::allocator<T>).
+template<typename T, typename Coord = double,
+         typename Allocator = std::allocator<T>>
+using FieldMap3DSymY = FieldMap3D<T, SymmetryY, Coord, Allocator>;
+
+/// @brief Mirror symmetry operation along z-axis. Flip the z-coordinate from
+/// negative to positive.
+struct SymmetryZ {
+    [[nodiscard]] constexpr auto
+    operator()(double x, double y,
+               double z) const noexcept -> std::array<double, 3> {
+        return {x, y, std::abs(z)};
+    }
+};
+
+/// @brief A XY plane mirror symmetric field.
+/// @tparam T field value type
+/// @tparam Coord grid value type (floating-point, default: double)
+/// @tparam Allocator the allocator type used by internal field point data
+/// member (default: std::allocator<T>).
+template<typename T, typename Coord = double,
+         typename Allocator = std::allocator<T>>
+using FieldMap3DSymZ = FieldMap3D<T, SymmetryZ, Coord, Allocator>;
+
+/// @brief Mirror symmetry operation along x-axis and y-axis. Flip the
+/// x-coordinate and y-coordinate from negative to positive.
+struct SymmetryXY {
+    [[nodiscard]] constexpr auto
+    operator()(double x, double y,
+               double z) const noexcept -> std::array<double, 3> {
+        return {std::abs(x), std::abs(y), z};
+    }
+};
+
+/// @brief A YZ and ZX plane mirror symmetric field.
+/// @tparam T field value type
+/// @tparam Coord grid value type (floating-point, default: double)
+/// @tparam Allocator the allocator type used by internal field point data
+/// member (default: std::allocator<T>).
+template<typename T, typename Coord = double,
+         typename Allocator = std::allocator<T>>
+using FieldMap3DSymXY = FieldMap3D<T, SymmetryXY, Coord, Allocator>;
+
+/// @brief Mirror symmetry operation along x-axis and z-axis. Flip the
+/// x-coordinate and z-coordinate from negative to positive.
+struct SymmetryXZ {
+    [[nodiscard]] constexpr auto
+    operator()(double x, double y,
+               double z) const noexcept -> std::array<double, 3> {
+        return {std::abs(x), y, std::abs(z)};
+    }
+};
+
+/// @brief A XY and YZ plane mirror symmetric field.
+/// @tparam T field value type
+/// @tparam Coord grid value type (floating-point, default: double)
+/// @tparam Allocator the allocator type used by internal field point data
+/// member (default: std::allocator<T>).
+template<typename T, typename Coord = double,
+         typename Allocator = std::allocator<T>>
+using FieldMap3DSymXZ = FieldMap3D<T, SymmetryXZ, Coord, Allocator>;
+
+/// @brief Mirror symmetry operation along y-axis and z-axis. Flip the
+/// y-coordinate and z-coordinate from negative to positive.
+struct SymmetryYZ {
+    [[nodiscard]] constexpr auto
+    operator()(double x, double y,
+               double z) const noexcept -> std::array<double, 3> {
+        return {x, std::abs(y), std::abs(z)};
+    }
+};
+
+/// @brief A ZX and XY plane mirror symmetric field.
+/// @tparam T field value type
+/// @tparam Coord grid value type (floating-point, default: double)
+/// @tparam Allocator the allocator type used by internal field point data
+/// member (default: std::allocator<T>).
+template<typename T, typename Coord = double,
+         typename Allocator = std::allocator<T>>
+using FieldMap3DSymYZ = FieldMap3D<T, SymmetryYZ, Coord, Allocator>;
+
+/// @brief Mirror symmetry operation along x-axis, y-axis and z-axis. Flip the
+/// x-coordinate, y-coordinate and z-coordinate from negative to positive.
+struct SymmetryXYZ {
+    [[nodiscard]] constexpr auto
+    operator()(double x, double y,
+               double z) const noexcept -> std::array<double, 3> {
+        return {std::abs(x), std::abs(y), std::abs(z)};
+    }
+};
+
+/// @brief A XY, YZ and ZX plane mirror symmetric field.
+/// @tparam T field value type
+/// @tparam Coord grid value type (floating-point, default: double)
+/// @tparam Allocator the allocator type used by internal field point data
+/// member (default: std::allocator<T>).
+template<typename T, typename Coord = double,
+         typename Allocator = std::allocator<T>>
+using FieldMap3DSymXYZ = FieldMap3D<T, SymmetryXYZ, Coord, Allocator>;
 
 } // namespace EFM
 
