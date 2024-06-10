@@ -52,7 +52,7 @@ template<typename T, typename Proj = detail::multidentity,
          std::enable_if_t<std::is_floating_point_v<Coord>, bool> = true>
 class FieldMap3D : private Proj {
 public:
-    using FieldType = T;
+    using ValueType = T;
     using CoordinateType = Coord;
 
 public:
