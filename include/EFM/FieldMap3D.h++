@@ -55,7 +55,7 @@ template<
         decltype(std::declval<std::tuple<Coord&, Coord&, Coord&>>() =
                      std::declval<std::invoke_result_t<const Proj&, // clang-format on
                          const Coord&, const Coord&, const Coord&>>())>,
-    typename = std::enable_if_t<std::is_invocable_r<T, const Trans&, T>>>
+    typename = std::enable_if_t<std::is_invocable_r_v<T, const Trans&, T>>>
 class FieldMap3D : private Proj, private Trans {
 public:
     using ValueType = T;
@@ -340,9 +340,9 @@ struct SymmetryX {
 /// @tparam Coord grid value type (floating-point, default: double)
 /// @tparam Allocator the allocator type used by internal field point data
 /// member (default: std::allocator<T>).
-template<typename T, typename Coord = double,
+template<typename T, typename Coord = double, typename Trans = detail::identity,
          typename Allocator = std::allocator<T>>
-using FieldMap3DSymX = FieldMap3D<T, SymmetryX, Coord, Allocator>;
+using FieldMap3DSymX = FieldMap3D<T, Coord, SymmetryX, Trans, Allocator>;
 
 /// @brief Mirror symmetry operation along y-axis. Flip the y-coordinate from
 /// negative to positive.
@@ -359,9 +359,9 @@ struct SymmetryY {
 /// @tparam Coord grid value type (floating-point, default: double)
 /// @tparam Allocator the allocator type used by internal field point data
 /// member (default: std::allocator<T>).
-template<typename T, typename Coord = double,
+template<typename T, typename Coord = double, typename Trans = detail::identity,
          typename Allocator = std::allocator<T>>
-using FieldMap3DSymY = FieldMap3D<T, SymmetryY, Coord, Allocator>;
+using FieldMap3DSymY = FieldMap3D<T, Coord, SymmetryY, Trans, Allocator>;
 
 /// @brief Mirror symmetry operation along z-axis. Flip the z-coordinate from
 /// negative to positive.
@@ -378,9 +378,9 @@ struct SymmetryZ {
 /// @tparam Coord grid value type (floating-point, default: double)
 /// @tparam Allocator the allocator type used by internal field point data
 /// member (default: std::allocator<T>).
-template<typename T, typename Coord = double,
+template<typename T, typename Coord = double, typename Trans = detail::identity,
          typename Allocator = std::allocator<T>>
-using FieldMap3DSymZ = FieldMap3D<T, SymmetryZ, Coord, Allocator>;
+using FieldMap3DSymZ = FieldMap3D<T, Coord, SymmetryZ, Trans, Allocator>;
 
 /// @brief Mirror symmetry operation along x-axis and y-axis. Flip the
 /// x-coordinate and y-coordinate from negative to positive.
@@ -397,9 +397,9 @@ struct SymmetryXY {
 /// @tparam Coord grid value type (floating-point, default: double)
 /// @tparam Allocator the allocator type used by internal field point data
 /// member (default: std::allocator<T>).
-template<typename T, typename Coord = double,
+template<typename T, typename Coord = double, typename Trans = detail::identity,
          typename Allocator = std::allocator<T>>
-using FieldMap3DSymXY = FieldMap3D<T, SymmetryXY, Coord, Allocator>;
+using FieldMap3DSymXY = FieldMap3D<T, Coord, SymmetryXY, Trans, Allocator>;
 
 /// @brief Mirror symmetry operation along x-axis and z-axis. Flip the
 /// x-coordinate and z-coordinate from negative to positive.
@@ -416,9 +416,9 @@ struct SymmetryXZ {
 /// @tparam Coord grid value type (floating-point, default: double)
 /// @tparam Allocator the allocator type used by internal field point data
 /// member (default: std::allocator<T>).
-template<typename T, typename Coord = double,
+template<typename T, typename Coord = double, typename Trans = detail::identity,
          typename Allocator = std::allocator<T>>
-using FieldMap3DSymXZ = FieldMap3D<T, SymmetryXZ, Coord, Allocator>;
+using FieldMap3DSymXZ = FieldMap3D<T, Coord, SymmetryXZ, Trans, Allocator>;
 
 /// @brief Mirror symmetry operation along y-axis and z-axis. Flip the
 /// y-coordinate and z-coordinate from negative to positive.
@@ -435,9 +435,9 @@ struct SymmetryYZ {
 /// @tparam Coord grid value type (floating-point, default: double)
 /// @tparam Allocator the allocator type used by internal field point data
 /// member (default: std::allocator<T>).
-template<typename T, typename Coord = double,
+template<typename T, typename Coord = double, typename Trans = detail::identity,
          typename Allocator = std::allocator<T>>
-using FieldMap3DSymYZ = FieldMap3D<T, SymmetryYZ, Coord, Allocator>;
+using FieldMap3DSymYZ = FieldMap3D<T, Coord, SymmetryYZ, Trans, Allocator>;
 
 /// @brief Mirror symmetry operation along x-axis, y-axis and z-axis. Flip the
 /// x-coordinate, y-coordinate and z-coordinate from negative to positive.
@@ -454,9 +454,9 @@ struct SymmetryXYZ {
 /// @tparam Coord grid value type (floating-point, default: double)
 /// @tparam Allocator the allocator type used by internal field point data
 /// member (default: std::allocator<T>).
-template<typename T, typename Coord = double,
+template<typename T, typename Coord = double, typename Trans = detail::identity,
          typename Allocator = std::allocator<T>>
-using FieldMap3DSymXYZ = FieldMap3D<T, SymmetryXYZ, Coord, Allocator>;
+using FieldMap3DSymXYZ = FieldMap3D<T, Coord, SymmetryXYZ, Trans, Allocator>;
 
 } // namespace EFM
 
