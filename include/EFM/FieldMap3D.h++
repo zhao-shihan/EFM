@@ -45,21 +45,28 @@ namespace EFM {
 /// @tparam Coord grid value type (floating-point, default: double)
 /// @tparam Allocator the allocator type used by internal field point data
 /// member (default: std::allocator<T>).
-template<typename T, typename Proj = detail::multidentity,
-         typename Coord = double, typename Allocator = std::allocator<T>,
-         std::enable_if_t<detail::is_general_arithmetic_v<T>, bool> = true,
-         std::enable_if_t<FieldTypeQualified<T>::value, bool> = true,
-         std::enable_if_t<std::is_floating_point_v<Coord>, bool> = true>
-class FieldMap3D : private Proj {
+template<
+    typename T, typename Coord = double, typename Proj = detail::multidentity,
+    typename Trans = detail::identity, typename Allocator = std::allocator<T>,
+    typename = std::enable_if_t<detail::is_general_arithmetic_v<T>>,
+    typename = std::enable_if_t<FieldTypeQualified<T>::value>,
+    typename = std::enable_if_t<std::is_floating_point_v<Coord>>,
+    typename = std::void_t< // clang-format off
+        decltype(std::declval<std::tuple<Coord&, Coord&, Coord&>>() =
+                     std::declval<std::invoke_result_t<const Proj&, // clang-format on
+                         const Coord&, const Coord&, const Coord&>>())>,
+    typename = std::enable_if_t<std::is_invocable_r<T, const Trans&, T>>>
+class FieldMap3D : private Proj, private Trans {
 public:
     using ValueType = T;
     using CoordinateType = Coord;
 
 public:
     FieldMap3D(std::string_view fileName, std::string_view nTupleName,
-               Proj proj = {}, Coord tolerance = 0.001,
+               Proj proj = {}, Trans trans = {}, Coord tolerance = 0.001,
                const Allocator& allocator = {}) :
         Proj{std::move(proj)},
+        Trans{std::move(trans)},
         fFieldDimension{},
         fGrid{},
         fField{allocator} {
@@ -80,10 +87,11 @@ public:
         Initialize(nTuple, tolerance);
     }
 
-    explicit FieldMap3D(TNtuple* nTuple, Proj proj = {},
+    explicit FieldMap3D(TNtuple* nTuple, Proj proj = {}, Trans trans = {},
                         Coord tolerance = 0.001,
                         const Allocator& allocator = {}) :
         Proj{std::move(proj)},
+        Trans{std::move(trans)},
         fFieldDimension{},
         fGrid{},
         fField{allocator} {
@@ -109,15 +117,16 @@ public:
         const auto j{static_cast<int>(v)};
         const auto k{static_cast<int>(w)};
         // clang-format off
-        return detail::trilerp(Field(i,     j,     k    ),
-                               Field(i,     j,     k + 1),
-                               Field(i,     j + 1, k    ),
-                               Field(i,     j + 1, k + 1),
-                               Field(i + 1, j,     k    ),
-                               Field(i + 1, j,     k + 1),
-                               Field(i + 1, j + 1, k    ),
-                               Field(i + 1, j + 1, k + 1),
-                               u - i, v - j, w - k); // clang-format on
+        return static_cast<const Trans&>(*this)(detail::trilerp(
+            Field(i,     j,     k    ),
+            Field(i,     j,     k + 1),
+            Field(i,     j + 1, k    ),
+            Field(i,     j + 1, k + 1),
+            Field(i + 1, j,     k    ),
+            Field(i + 1, j,     k + 1),
+            Field(i + 1, j + 1, k    ),
+            Field(i + 1, j + 1, k + 1),
+            u - i, v - j, w - k)); // clang-format on
     }
 
     auto operator()(std::array<Coord, 3> x) const -> T {

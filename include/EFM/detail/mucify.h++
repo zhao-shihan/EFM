@@ -8,6 +8,22 @@ namespace EFM {
 
 namespace detail {
 
+/// @brief `detail::identity` is a function object type whose operator() returns
+/// its argument unchanged. The effect is the same as It is a backport of
+/// `std::identity`.
+struct identity {
+    using is_transparent = struct {};
+
+    template<typename T>
+    [[nodiscard]] constexpr auto operator()(T&& t) const noexcept -> T&& {
+        return std::forward<T>(t);
+    }
+};
+
+} // namespace detail
+
+namespace detail {
+
 /// @brief detail::multidentity is a function object type whose operator() returns
 /// its arguments in a `std::tuple`. The effect is the same as
 /// `std::forward_as_tuple`.
