@@ -5,7 +5,7 @@
 # namespace effect.
 #
 # IE:
-#   #include "EFM/VectorFieldMap.h++"
+#   #include "EFM/FieldMap3D.h++"
 if(PROJECT_IS_TOP_LEVEL)
     target_include_directories(EFM INTERFACE $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>)
 else()

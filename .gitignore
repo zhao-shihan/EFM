@@ -1,4 +1,9 @@
 .vscode/
+*.a
+*.dll
 *.exe
+*.lib
+*.o
 *.out
+*.so
 build/
