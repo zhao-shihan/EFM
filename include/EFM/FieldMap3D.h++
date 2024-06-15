@@ -109,13 +109,20 @@ public:
         y = std::clamp(y, get<1>(fGrid).min, get<1>(fGrid).max);
         z = std::clamp(z, get<2>(fGrid).min, get<2>(fGrid).max);
 
-        const auto u{(x - get<0>(fGrid).min) / get<0>(fGrid).delta};
-        const auto v{(y - get<1>(fGrid).min) / get<1>(fGrid).delta};
-        const auto w{(z - get<2>(fGrid).min) / get<2>(fGrid).delta};
+        constexpr auto Decompose{
+            [](Coord x, const GridInfomation& grid) -> std::pair<int, Coord> {
+                const auto u{(x - grid.min) / grid.delta};
+                auto i{static_cast<int>(u)};
+                assert(0 <= i), assert(i <= grid.n - 1);
+                if (i == grid.n - 1) {
+                    --i;
+                }
+                return {i, u - i};
+            }};
+        const auto [i, u]{Decompose(x, get<0>(fGrid))};
+        const auto [j, v]{Decompose(y, get<1>(fGrid))};
+        const auto [k, w]{Decompose(z, get<2>(fGrid))};
 
-        const auto i{static_cast<int>(u)};
-        const auto j{static_cast<int>(v)};
-        const auto k{static_cast<int>(w)};
         // clang-format off
         return static_cast<const Trans&>(*this)(detail::trilerp(
             Field(i,     j,     k    ),
@@ -126,7 +133,7 @@ public:
             Field(i + 1, j,     k + 1),
             Field(i + 1, j + 1, k    ),
             Field(i + 1, j + 1, k + 1),
-            u - i, v - j, w - k)); // clang-format on
+            u, v, w)); // clang-format on
     }
 
     auto operator()(std::array<Coord, 3> x) const -> T {
@@ -276,8 +283,9 @@ private:
         }
         fField.shrink_to_fit();
 
-        if (ssize(fField) !=
-            get<0>(fGrid).n * get<1>(fGrid).n * get<2>(fGrid).n) {
+        if (ssize(fField) != static_cast<std::size_t>(get<0>(fGrid).n) *
+                                 static_cast<std::size_t>(get<1>(fGrid).n) *
+                                 static_cast<std::size_t>(get<2>(fGrid).n)) {
             throw std::runtime_error{
                 "EFM::FieldMap3D: Irregular grid (N != Nx * Ny * Nz)"};
         }
