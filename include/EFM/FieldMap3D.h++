@@ -112,8 +112,8 @@ public:
         static_cast<Proj&>(*this) = std::move(proj);
     }
 
-    auto operator()(Coord x, Coord y, Coord z) const -> T {
-        std::tie(x, y, z) = static_cast<const Proj&>(*this)(x, y, z);
+    auto operator()(Coord x0, Coord y0, Coord z0) const -> T {
+        auto [x, y, z]{static_cast<const Proj&>(*this)(x0, y0, z0)};
 
         x = std::clamp(x, get<0>(fGrid).min, get<0>(fGrid).max);
         y = std::clamp(y, get<1>(fGrid).min, get<1>(fGrid).max);
@@ -135,7 +135,7 @@ public:
 
         // clang-format off
         return static_cast<const Trans&>(*this)(
-            x, y, z,
+            x0, y0, z0,
             detail::trilerp(
                 Field(i,     j,     k    ),
                 Field(i,     j,     k + 1),
