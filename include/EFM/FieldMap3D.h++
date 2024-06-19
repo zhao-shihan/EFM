@@ -37,6 +37,15 @@
 
 namespace EFM {
 
+/// @brief Returns the field unchanged.
+struct Identity {
+    template<typename Coord, typename T>
+    [[nodiscard]] constexpr auto operator()(Coord&&, Coord&&, Coord&&,
+                                            T&& t) const noexcept -> T&& {
+        return std::forward<T>(t);
+    }
+};
+
 /// @brief Interpolate field on a 3-dimensional regular grid. Trilinear
 /// interpolation is performed. The coordinates is projected by `Proj`, this can
 /// be used to move the field or do symmetry operation.
@@ -45,17 +54,18 @@ namespace EFM {
 /// @tparam Coord grid value type (floating-point, default: double)
 /// @tparam Allocator the allocator type used by internal field point data
 /// member (default: std::allocator<T>).
-template<
-    typename T, typename Coord = double, typename Proj = detail::multidentity,
-    typename Trans = detail::identity, typename Allocator = std::allocator<T>,
-    typename = std::enable_if_t<detail::is_general_arithmetic_v<T>>,
-    typename = std::enable_if_t<FieldTypeQualified<T>::value>,
-    typename = std::enable_if_t<std::is_floating_point_v<Coord>>,
-    typename = std::void_t< // clang-format off
+template<typename T, typename Coord = double,
+         typename Proj = detail::multidentity, typename Trans = Identity,
+         typename Allocator = std::allocator<T>,
+         typename = std::enable_if_t<detail::is_general_arithmetic_v<T>>,
+         typename = std::enable_if_t<FieldTypeQualified<T>::value>,
+         typename = std::enable_if_t<std::is_floating_point_v<Coord>>,
+         typename = std::void_t< // clang-format off
         decltype(std::declval<std::tuple<Coord&, Coord&, Coord&>>() =
                      std::declval<std::invoke_result_t<const Proj&, // clang-format on
-                         const Coord&, const Coord&, const Coord&>>())>,
-    typename = std::enable_if_t<std::is_invocable_r_v<T, const Trans&, T>>>
+                              const Coord&, const Coord&, const Coord&>>())>,
+         typename = std::enable_if_t<std::is_invocable_r_v<
+             T, const Trans&, const Coord&, const Coord&, const Coord&, T>>>
 class FieldMap3D : private Proj, private Trans {
 public:
     using ValueType = T;
@@ -124,16 +134,18 @@ public:
         const auto [k, w]{Decompose(z, get<2>(fGrid))};
 
         // clang-format off
-        return static_cast<const Trans&>(*this)(detail::trilerp(
-            Field(i,     j,     k    ),
-            Field(i,     j,     k + 1),
-            Field(i,     j + 1, k    ),
-            Field(i,     j + 1, k + 1),
-            Field(i + 1, j,     k    ),
-            Field(i + 1, j,     k + 1),
-            Field(i + 1, j + 1, k    ),
-            Field(i + 1, j + 1, k + 1),
-            u, v, w)); // clang-format on
+        return static_cast<const Trans&>(*this)(
+            x, y, z,
+            detail::trilerp(
+                Field(i,     j,     k    ),
+                Field(i,     j,     k + 1),
+                Field(i,     j + 1, k    ),
+                Field(i,     j + 1, k + 1),
+                Field(i + 1, j,     k    ),
+                Field(i + 1, j,     k + 1),
+                Field(i + 1, j + 1, k    ),
+                Field(i + 1, j + 1, k + 1),
+                u, v, w)); // clang-format on
     }
 
     auto operator()(std::array<Coord, 3> x) const -> T {
@@ -283,7 +295,7 @@ private:
         }
         fField.shrink_to_fit();
 
-        if (ssize(fField) != static_cast<std::size_t>(get<0>(fGrid).n) *
+        if (fField.size() != static_cast<std::size_t>(get<0>(fGrid).n) *
                                  static_cast<std::size_t>(get<1>(fGrid).n) *
                                  static_cast<std::size_t>(get<2>(fGrid).n)) {
             throw std::runtime_error{
